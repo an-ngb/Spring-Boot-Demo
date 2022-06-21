@@ -34,7 +34,6 @@ public class UserServiceImpl implements UserService {
 
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
-
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailService;
@@ -133,6 +132,22 @@ public class UserServiceImpl implements UserService {
                 new ResponeObject("400", "Email is not valid,  please try again.", ""));
     }
 
+    @Override
+    public ResponseEntity<ResponeObject> userPermissionChange(ChangeRoleRequestDto changeRoleRequestDto) {
+        Long role = changeRoleRequestDto.getRoleId();
+        if (role == null) {
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(
+                    new ResponeObject("400", "Role can not be null.", role)
+            );
+        } else {
+            User foundUser = userRepository.findByEmail(changeRoleRequestDto.getEmail());
+            foundUser.setRole(roleRepository.findRoleById(role));
+            userRepository.save(foundUser);
+            return ResponseEntity.status(HttpStatus.OK).body(
+                    new ResponeObject("200", "Role has been changed", foundUser)
+            );
+        }
+    }
 
     public boolean authenticate(String email, String password) throws Exception {
         try {

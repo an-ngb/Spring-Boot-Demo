@@ -1,8 +1,10 @@
 package com.phunghung29.securitydemo.controller;
 
 import com.phunghung29.securitydemo.dto.*;
+import com.phunghung29.securitydemo.entity.Role;
 import com.phunghung29.securitydemo.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -36,9 +38,15 @@ public class GatewayController {
         return userService.register(registerRequestDto);
     }
 
+    @PutMapping ("/users/userpermissionchange")
+    public ResponseEntity<ResponeObject>userPermissionChange(@RequestBody ChangeRoleRequestDto changeRoleRequestDto){
+        return userService.userPermissionChange(changeRoleRequestDto);
+    }
+
     @GetMapping("/users/all")
     public ResponseEntity<?> getAllUsers() {
         List<UserDto> userDtoList = userService.findAll();
         return ResponseEntity.ok(userDtoList);
     }
+
 }
