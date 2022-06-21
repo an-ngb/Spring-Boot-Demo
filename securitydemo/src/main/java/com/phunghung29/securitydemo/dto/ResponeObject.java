@@ -9,6 +9,6 @@ import lombok.NoArgsConstructor;
 @Data
 public class ResponeObject {
     private String status;
-    private  String message;
-    private  Object data;
+    private String message;
+    private Object data;
 }

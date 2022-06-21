@@ -8,7 +8,9 @@ import java.util.List;
 
 public interface UserService {
     User findById(Long id);
+
     List<UserDto> findAll();
+
     LoginDto login(LoginRequestDto loginRequestDto) throws RuntimeException;
 
     ResponseEntity<ResponeObject> register(RegisterRequestDto registerRequestDto);
