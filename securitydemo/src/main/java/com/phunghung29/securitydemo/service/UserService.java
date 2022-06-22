@@ -18,5 +18,11 @@ public interface UserService {
 
     ResponseEntity<ResponeObject> register(RegisterRequestDto registerRequestDto);
 
-    ResponseEntity<ResponeObject> userPermissionChange(ChangeRoleRequestDto changeRoleRequestDto);
+    ResponseEntity<?> userPermissionChange(ChangeRoleRequestDto changeRoleRequestDto);
+
+    ResponseEntity<?> userPasswordChange(ChangePasswordRequestDto changePasswordRequestDto);
+
+    List<UserDto> searchForEmail(String email);
+
+    List<UserDto> searchForRole(String role);
 }

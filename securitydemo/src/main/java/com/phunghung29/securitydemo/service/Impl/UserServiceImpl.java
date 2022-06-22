@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
 import java.util.*;
 
 @Service
@@ -37,6 +38,10 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailService;
+
+    private final Instant instant = Instant.now();
+
+    private final long timeStampMillis = instant.toEpochMilli();
 
 
     @Override
@@ -80,7 +85,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public ResponseEntity<ResponeObject> register(RegisterRequestDto registerRequestDto) {
-
         String emailAddress = registerRequestDto.getEmail();
         boolean validEmailAddress = (EmailValidator.getInstance().isValid(emailAddress));
         if (validEmailAddress) {
@@ -132,36 +136,8 @@ public class UserServiceImpl implements UserService {
                 new ResponeObject("400", "Email is not valid,  please try again.", ""));
     }
 
-    @Override
-    public ResponseEntity<ResponeObject> userPermissionChange(ChangeRoleRequestDto changeRoleRequestDto) {
-        Long role = changeRoleRequestDto.getRoleId();
-        if (role == null) {
-            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(
-                    new ResponeObject("400", "Role can not be null.", role)
-            );
-        } else {
-            User foundUser = userRepository.findByEmail(changeRoleRequestDto.getEmail());
-            foundUser.setRole(roleRepository.findRoleById(role));
-            userRepository.save(foundUser);
-            return ResponseEntity.status(HttpStatus.OK).body(
-                    new ResponeObject("200", "Role has been changed", foundUser)
-            );
-        }
-    }
-
-    public boolean authenticate(String email, String password) throws Exception {
-        try {
-            Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
-            SecurityContextHolder.getContext().setAuthentication(auth);
-            return true;
-        } catch (DisabledException e) {
-            throw new DisabledException("USER_DISABLED", e);
-        } catch (BadCredentialsException e) {
-            throw new BadCredentialsException("INCORRECT_EMAIL_OR_PASSWORD", e);
-        }
-    }
-
-    public static String generateToken(Map<String, Object> payload, org.springframework.security.core.userdetails.User user) {
+    public static String generateToken
+            (Map < String, Object > payload, org.springframework.security.core.userdetails.User user){
         Properties prop = loadProperties("jwt.setting.properties");
         assert prop != null;
         String key = prop.getProperty("key");
@@ -178,7 +154,97 @@ public class UserServiceImpl implements UserService {
                 .sign(algorithm);
     }
 
-    public static Properties loadProperties(String fileName) {
+    @Override
+    public ResponseEntity<?> userPermissionChange(ChangeRoleRequestDto changeRoleRequestDto) {
+        Long role = changeRoleRequestDto.getRoleId();
+        if (role == null) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_ACCEPTABLE)
+                    .body(new ResponeObject("400", "Role can not be null.", role)
+                    );
+        } else {
+            User foundUser = userRepository.findByEmail(changeRoleRequestDto.getEmail());
+            foundUser.setRole(roleRepository.findRoleById(role));
+            userRepository.save(foundUser);
+
+            HashMap<String, Object> hmap = new HashMap<String, Object>();
+            hmap.put("timestamp", timeStampMillis);
+            hmap.put("data", changeRoleRequestDto);
+
+            return ResponseEntity.status(HttpStatus.OK).body(
+                    new ResponeObject("200", "Role has been changed", hmap)
+            );
+        }
+    }
+
+    public ResponseEntity<?> userPasswordChange(ChangePasswordRequestDto changePasswordRequestDto) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentRequestEmail = authentication.getName();
+        String newPassword = changePasswordRequestDto.getNewPassword();
+        User foundUser = userRepository.findByEmail(changePasswordRequestDto.getEmail());
+        if (currentRequestEmail.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(new ResponeObject("400", "Email can not be null", ""));
+        } else if (newPassword.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(new ResponeObject("400", "Password can not be null", ""));
+        } else {
+            String encodedPassword = passwordEncoder.encode(changePasswordRequestDto.getNewPassword());
+            foundUser.setPassword(encodedPassword);
+            userRepository.save(foundUser);
+        }
+
+        HashMap<String, Object> hmap = new HashMap<String, Object>();
+        hmap.put("timestamp", timeStampMillis);
+        hmap.put("data", changePasswordRequestDto.getEmail());
+
+        return ResponseEntity.status(HttpStatus.OK).body(new ResponeObject("200", "Password has been changed.", hmap));
+    }
+
+    @Override
+    public List<UserDto> searchForEmail(String email) {
+        List<User> userList = userRepository.findByCaseSensitiveEmail(email);
+        if (userList == null || userList.isEmpty()) {
+            throw new RuntimeException("NOT FOUND");
+        }
+        List<UserDto> userDtoList = new ArrayList<>();
+        userList.forEach(item -> {
+            UserDto userDto = new UserDto();
+            BeanUtils.copyProperties(item, userDto);
+            userDto.setRoleName(item.getRole().getRoleName());
+            userDtoList.add(userDto);
+        });
+        return userDtoList;
+    }
+
+    @Override
+    public List<UserDto>searchForRole(String role){
+        List<User> userListByRole = userRepository.findByUserRole(role);
+        if (userListByRole == null || userListByRole.isEmpty()) {
+            throw new RuntimeException("NOT FOUND");
+        }
+        List<UserDto> userDtoList = new ArrayList<>();
+        userListByRole.forEach(item -> {
+            UserDto userDto = new UserDto();
+            BeanUtils.copyProperties(item, userDto);
+            userDto.setRoleName(item.getRole().getRoleName());
+            userDtoList.add(userDto);
+        });
+        return userDtoList;
+    }
+
+    public boolean authenticate (String email, String password) throws Exception {
+        try {
+            Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
+            SecurityContextHolder.getContext().setAuthentication(auth);
+            return true;
+        } catch (DisabledException e) {
+            throw new DisabledException("USER_DISABLED", e);
+        } catch (BadCredentialsException e) {
+            throw new BadCredentialsException("INCORRECT_EMAIL_OR_PASSWORD", e);
+        }
+    }
+
+
+    public static Properties loadProperties (String fileName){
         try (InputStream input = User.class.getClassLoader().getResourceAsStream(fileName)) {
 
             Properties prop = new Properties();

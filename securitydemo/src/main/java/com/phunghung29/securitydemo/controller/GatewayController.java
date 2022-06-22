@@ -2,6 +2,7 @@ package com.phunghung29.securitydemo.controller;
 
 import com.phunghung29.securitydemo.dto.*;
 import com.phunghung29.securitydemo.entity.Role;
+import com.phunghung29.securitydemo.entity.User;
 import com.phunghung29.securitydemo.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.repository.query.Param;
@@ -9,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.Objects;
 
 import java.util.HashMap;
 import java.util.List;
@@ -38,9 +40,49 @@ public class GatewayController {
         return userService.register(registerRequestDto);
     }
 
-    @PutMapping ("/users/userpermissionchange")
-    public ResponseEntity<ResponeObject>userPermissionChange(@RequestBody ChangeRoleRequestDto changeRoleRequestDto){
+    @PutMapping ("/admin/userpermissionchange")
+    public ResponseEntity<?>userPermissionChange(@RequestBody ChangeRoleRequestDto changeRoleRequestDto){
         return userService.userPermissionChange(changeRoleRequestDto);
+    }
+
+    @PutMapping("/admin/userpasswordchange")
+    public ResponseEntity<?>userPasswordChange(@RequestBody ChangePasswordRequestDto changePasswordRequestDto){
+        return userService.userPasswordChange(changePasswordRequestDto);
+    }
+
+    @PostMapping("/search")
+    public ResponseEntity<?>userSearch(SearchDto searchDto){
+        if(searchDto.getEmail() == null && searchDto.getRole() == null){
+            return new ResponseEntity(HttpStatus.NOT_ACCEPTABLE);
+        } else if (searchDto.getEmail() == null || searchDto.getRole() == null) {
+            if (searchDto.getEmail().length() > 0){
+                List<UserDto> userDtoList = userService.searchForEmail(searchDto.getEmail());
+                return ResponseEntity.ok(userDtoList);
+            } else{
+                List<UserDto> userDtoList = userService.searchForRole(searchDto.getRole());
+                return ResponseEntity.ok(userDtoList);
+            }
+        } else{
+            List<UserDto> searchDtoList = userService.searchForEmail(searchDto.getEmail());
+            List<UserDto> searchDtoListByRole = userService.searchForRole(searchDto.getRole());
+
+            Map mp = new HashMap();
+            mp.put("emailsearch", searchDtoList);
+            mp.put("rolesearch", searchDtoListByRole);
+
+            return ResponseEntity.ok(mp);
+        }
+//        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(new ResponeObject("400", "Search can not be done.", ""));
+    }
+    @PostMapping("/emailsearch")
+    public ResponseEntity<?>searchForEmail(@Param("email") String email){
+        List<UserDto> userDtoList = userService.searchForEmail(email);
+        return ResponseEntity.ok(userDtoList);
+    }
+    @PostMapping("/rolesearch")
+    public ResponseEntity<?>searchForRole(@Param("role") String role){
+        List<UserDto> userDtoList = userService.searchForRole(role);
+        return ResponseEntity.ok(userDtoList);
     }
 
     @GetMapping("/users/all")

@@ -33,7 +33,6 @@ public class JwtHandlerFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-
         String token = request.getHeader("Authorization");
         assert token.startsWith("Bearer");
         token = token.split(" ")[1];
