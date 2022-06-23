@@ -14,7 +14,7 @@ public class UserSpecs {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicateList = new ArrayList<>();
             Join<User, Role> join = root.join("role");
-            if (searchDto.getEmail() != null && searchDto.getRole() != null) {
+            if (searchDto.getEmail() != null && !searchDto.getEmail().isEmpty() && searchDto.getRole() != null && !searchDto.getRole().isEmpty()) {
                 Predicate emailAndRoleNamePredicate = criteriaBuilder.and(
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("email")), searchDto.getEmail()),
                         criteriaBuilder.like(criteriaBuilder.lower(join.get("roleName")), searchDto.getRole())
