@@ -13,11 +13,13 @@ import java.util.List;
 public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificationExecutor<User> {
     User findByEmail(String email);
 
+    @Query("select u from User u where u.role.roleName like %:role% and u.email like CONCAT('%', :email, '%')")
+    List<User> findByUserRoleAndEmail(@Param("role") String role, @Param("email") String email);
+
     @Query("select u from User u where u.role.roleName like %:role%")
     List<User> findByUserRole(@Param("role") String role);
 
     @Query("SELECT u from User u where lower(u.email) like CONCAT('%', :email, '%') ")
-    List<User> findByCaseSensitiveEmail(@Param("email") String email);
-
+    List<User> findByUserEmail(@Param("email") String email);
 
 }

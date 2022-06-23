@@ -22,7 +22,8 @@ public interface UserService {
 
     ResponseEntity<?> userPasswordChange(ChangePasswordRequestDto changePasswordRequestDto);
 
-    List<UserDto> searchForEmail(String email);
+//    List<UserDto> searchForEmail(String email);
 
-    List<UserDto> searchForRole(String role);
+    //    List<UserDto> searchForRole(String role);
+    List<UserDto> userSearch(SearchDto searchDto);
 }

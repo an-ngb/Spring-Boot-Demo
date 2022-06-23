@@ -137,7 +137,7 @@ public class UserServiceImpl implements UserService {
     }
 
     public static String generateToken
-            (Map < String, Object > payload, org.springframework.security.core.userdetails.User user){
+            (Map<String, Object> payload, org.springframework.security.core.userdetails.User user) {
         Properties prop = loadProperties("jwt.setting.properties");
         assert prop != null;
         String key = prop.getProperty("key");
@@ -199,14 +199,51 @@ public class UserServiceImpl implements UserService {
         return ResponseEntity.status(HttpStatus.OK).body(new ResponeObject("200", "Password has been changed.", hmap));
     }
 
+//    @Override
+//    public List<UserDto> searchForEmail(String email) {
+//        List<User> userList = userRepository.findByCaseSensitiveEmail(email);
+//        if (userList == null || userList.isEmpty()) {
+//            throw new RuntimeException("NOT FOUND");
+//        }
+//        List<UserDto> userDtoList = new ArrayList<>();
+//        userList.forEach(item -> {
+//            UserDto userDto = new UserDto();
+//            BeanUtils.copyProperties(item, userDto);
+//            userDto.setRoleName(item.getRole().getRoleName());
+//            userDtoList.add(userDto);
+//        });
+//        return userDtoList;
+//    }
+
+    //    @Override
+//    public List<UserDto>searchForRole(String role){
+//        List<User> userListByRole = userRepository.findByUserRole(role);
+//        if (userListByRole == null || userListByRole.isEmpty()) {
+//            throw new RuntimeException("NOT FOUND");
+//        }
+//        List<UserDto> userDtoList = new ArrayList<>();
+//        userListByRole.forEach(item -> {
+//            UserDto userDto = new UserDto();
+//            BeanUtils.copyProperties(item, userDto);
+//            userDto.setRoleName(item.getRole().getRoleName());
+//            userDtoList.add(userDto);
+//        });
+//        return userDtoList;
+//    }
     @Override
-    public List<UserDto> searchForEmail(String email) {
-        List<User> userList = userRepository.findByCaseSensitiveEmail(email);
-        if (userList == null || userList.isEmpty()) {
-            throw new RuntimeException("NOT FOUND");
-        }
+    public List<UserDto> userSearch(SearchDto searchDto) {
+        List<User> userListByRoleAndEmail;
+         if (searchDto.getRole() != null && searchDto.getEmail() != null){
+             userListByRoleAndEmail = userRepository.findByUserRoleAndEmail(searchDto.getRole(), searchDto.getEmail());
+         }else if (searchDto.getRole() == null){
+             userListByRoleAndEmail = userRepository.findByUserEmail(searchDto.getEmail());
+         } else if (searchDto.getEmail() == null) {
+             userListByRoleAndEmail = userRepository.findByUserRole(searchDto.getRole());
+         } else throw new RuntimeException("NOT FOUND");
+//        if (userListByRoleAndEmail == null || userListByRoleAndEmail.isEmpty()) {
+//        }
         List<UserDto> userDtoList = new ArrayList<>();
-        userList.forEach(item -> {
+        userListByRoleAndEmail.forEach(item -> {
             UserDto userDto = new UserDto();
             BeanUtils.copyProperties(item, userDto);
             userDto.setRoleName(item.getRole().getRoleName());
@@ -215,23 +252,7 @@ public class UserServiceImpl implements UserService {
         return userDtoList;
     }
 
-    @Override
-    public List<UserDto>searchForRole(String role){
-        List<User> userListByRole = userRepository.findByUserRole(role);
-        if (userListByRole == null || userListByRole.isEmpty()) {
-            throw new RuntimeException("NOT FOUND");
-        }
-        List<UserDto> userDtoList = new ArrayList<>();
-        userListByRole.forEach(item -> {
-            UserDto userDto = new UserDto();
-            BeanUtils.copyProperties(item, userDto);
-            userDto.setRoleName(item.getRole().getRoleName());
-            userDtoList.add(userDto);
-        });
-        return userDtoList;
-    }
-
-    public boolean authenticate (String email, String password) throws Exception {
+    public boolean authenticate(String email, String password) throws Exception {
         try {
             Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
             SecurityContextHolder.getContext().setAuthentication(auth);
@@ -243,8 +264,7 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-
-    public static Properties loadProperties (String fileName){
+    public static Properties loadProperties(String fileName) {
         try (InputStream input = User.class.getClassLoader().getResourceAsStream(fileName)) {
 
             Properties prop = new Properties();
