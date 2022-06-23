@@ -51,6 +51,12 @@ public class GatewayController {
         return userService.userPasswordChange(changePasswordRequestDto);
     }
 
+    @PostMapping("/search2")
+    public ResponseEntity<?> userSearch2(SearchDto searchDto){
+        List<UserDto> searchDtoList = userService.userSearch2(searchDto);
+        return ResponseEntity.ok(searchDtoList);
+    }
+
     @PostMapping("/search")
     public ResponseEntity<?> userSearch(SearchDto searchDto) {
         List<UserDto> searchDtoList = userService.userSearch(searchDto);

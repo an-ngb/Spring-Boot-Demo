@@ -8,6 +8,7 @@ import com.phunghung29.securitydemo.entity.User;
 import com.phunghung29.securitydemo.repository.RoleRepository;
 import com.phunghung29.securitydemo.repository.UserRepository;
 import com.phunghung29.securitydemo.service.UserService;
+import com.phunghung29.securitydemo.specs.UserSpecs;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.springframework.beans.BeanUtils;
@@ -249,6 +250,20 @@ public class UserServiceImpl implements UserService {
             userDto.setRoleName(item.getRole().getRoleName());
             userDtoList.add(userDto);
         });
+        return userDtoList;
+    }
+
+    @Override
+    public List<UserDto> userSearch2(SearchDto searchDto) {
+        List<User> user = userRepository.findAll(UserSpecs.filter(searchDto));
+        List<UserDto> userDtoList = new ArrayList<>();
+        user.forEach( item -> {
+                    UserDto userDto = new UserDto();
+                    BeanUtils.copyProperties(item, userDto);
+                    userDto.setRoleName(item.getRole().getRoleName());
+                    userDtoList.add(userDto);
+                }
+        );
         return userDtoList;
     }
 

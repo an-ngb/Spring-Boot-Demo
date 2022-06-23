@@ -26,4 +26,6 @@ public interface UserService {
 
     //    List<UserDto> searchForRole(String role);
     List<UserDto> userSearch(SearchDto searchDto);
+
+    List<UserDto> userSearch2(SearchDto searchDto);
 }
