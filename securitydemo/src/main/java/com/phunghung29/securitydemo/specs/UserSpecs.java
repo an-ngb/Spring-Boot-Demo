@@ -16,12 +16,11 @@ public class UserSpecs {
             Join<User, Role> join = root.join("role");
             if (searchDto.getEmail() != null && searchDto.getRole() != null) {
                 Predicate emailAndRoleNamePredicate = criteriaBuilder.and(
-                        criteriaBuilder.like(criteriaBuilder.lower(join.get("email")), searchDto.getEmail()),
-                        criteriaBuilder.like(criteriaBuilder.lower(join.get("role")), searchDto.getRole())
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("email")), searchDto.getEmail()),
+                        criteriaBuilder.like(criteriaBuilder.lower(join.get("roleName")), searchDto.getRole())
                 );
                 predicateList.add(emailAndRoleNamePredicate);
-            }
-            ;
+            };
             return criteriaBuilder.and(predicateList.toArray(new Predicate[0]));
         };
     }
