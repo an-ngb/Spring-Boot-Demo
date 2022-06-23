@@ -54,7 +54,10 @@ public class GatewayController {
     @PostMapping("/search2")
     public ResponseEntity<?> userSearch2(@RequestBody SearchDto searchDto) {
         List<UserDto> searchDtoList = userService.userSearch2(searchDto);
-        return ResponseEntity.ok(searchDtoList);
+        if(searchDto.getRole() == null || searchDto.getRole().isEmpty() &&  searchDto.getEmail() == null || searchDto.getEmail().isEmpty()){
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(new ResponeObject("400", "Search can not be done", ""));
+        } else
+            return ResponseEntity.status(HttpStatus.OK).body(new ResponeObject("200", "Search successfully", searchDtoList));
     }
 
     @PostMapping("/search")
