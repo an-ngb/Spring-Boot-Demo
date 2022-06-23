@@ -52,7 +52,7 @@ public class GatewayController {
     }
 
     @PostMapping("/search2")
-    public ResponseEntity<?> userSearch2(@RequestBody SearchDto searchDto){
+    public ResponseEntity<?> userSearch2(@RequestBody SearchDto searchDto) {
         List<UserDto> searchDtoList = userService.userSearch2(searchDto);
         return ResponseEntity.ok(searchDtoList);
     }

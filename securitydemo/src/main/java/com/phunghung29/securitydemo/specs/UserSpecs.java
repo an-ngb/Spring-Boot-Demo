@@ -16,19 +16,18 @@ public class UserSpecs {
             Join<User, Role> join = root.join("role");
             if (searchDto.getEmail() != null && !searchDto.getEmail().isEmpty() && searchDto.getRole() != null && !searchDto.getRole().isEmpty()) {
                 Predicate emailAndRoleNamePredicate = criteriaBuilder.and(
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("email")), searchDto.getEmail()),
-                        criteriaBuilder.like(criteriaBuilder.lower(join.get("roleName")), searchDto.getRole())
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("email")), "%" + searchDto.getEmail() + "%"),
+                        criteriaBuilder.like(criteriaBuilder.lower(join.get("roleName")), "%" + searchDto.getRole() + "%")
                 );
                 predicateList.add(emailAndRoleNamePredicate);
-            };
+            }
+            ;
             return criteriaBuilder.and(predicateList.toArray(new Predicate[0]));
         };
     }
 }
 //                Predicate emailPredicate = criteriaBuilder.like(criteriaBuilder.lower(root.get("email")), searchDto.getEmail());
 //                Predicate roleNamePredicate = criteriaBuilder.like(criteriaBuilder.lower(root.get("role")), searchDto.getRole());
-
-
 //                predicateList.addAll(Arrays.asList(emailPredicate, roleNamePredicate));
 //            } else if (searchDto.getRole() != null){
 //                Predicate roleNamePredicate = criteriaBuilder.like(criteriaBuilder.lower(root.get("role")), "%" + searchDto.getRole() + "%");

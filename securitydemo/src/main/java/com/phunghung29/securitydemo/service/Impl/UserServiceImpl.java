@@ -234,13 +234,13 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<UserDto> userSearch(SearchDto searchDto) {
         List<User> userListByRoleAndEmail;
-         if (searchDto.getRole() != null && searchDto.getEmail() != null){
-             userListByRoleAndEmail = userRepository.findByUserRoleAndEmail(searchDto.getRole(), searchDto.getEmail());
-         }else if (searchDto.getRole() == null){
-             userListByRoleAndEmail = userRepository.findByUserEmail(searchDto.getEmail());
-         } else if (searchDto.getEmail() == null) {
-             userListByRoleAndEmail = userRepository.findByUserRole(searchDto.getRole());
-         } else throw new RuntimeException("NOT FOUND");
+        if (searchDto.getRole() != null && searchDto.getEmail() != null) {
+            userListByRoleAndEmail = userRepository.findByUserRoleAndEmail(searchDto.getRole(), searchDto.getEmail());
+        } else if (searchDto.getRole() == null) {
+            userListByRoleAndEmail = userRepository.findByUserEmail(searchDto.getEmail());
+        } else if (searchDto.getEmail() == null) {
+            userListByRoleAndEmail = userRepository.findByUserRole(searchDto.getRole());
+        } else throw new RuntimeException("NOT FOUND");
 //        if (userListByRoleAndEmail == null || userListByRoleAndEmail.isEmpty()) {
 //        }
         List<UserDto> userDtoList = new ArrayList<>();
@@ -257,7 +257,7 @@ public class UserServiceImpl implements UserService {
     public List<UserDto> userSearch2(SearchDto searchDto) {
         List<User> user = userRepository.findAll(UserSpecs.filter(searchDto));
         List<UserDto> userDtoList = new ArrayList<>();
-        user.forEach( item -> {
+        user.forEach(item -> {
                     UserDto userDto = new UserDto();
                     BeanUtils.copyProperties(item, userDto);
                     userDto.setRoleName(item.getRole().getRoleName());
