@@ -283,7 +283,7 @@ public class UserServiceImpl implements UserService {
         } else if(foundUser == null){
             return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body( new ResponeObject("400", "User not found", ""));
         } else if (forgotPasswordRequestDto.getSecretQuestion().equals(foundUser.getSecretQuestion())) {
-            foundUser.setPassword(forgotPasswordRequestDto.getNewPassword());
+            foundUser.setPassword(passwordEncoder.encode(forgotPasswordRequestDto.getNewPassword()));
             userRepository.save(foundUser);
         }
         return ResponseEntity.status(HttpStatus.OK).body( new ResponeObject("200", "Password reset successfully", foundUser.getEmail()));
