@@ -1,8 +1,10 @@
 package com.phunghung29.securitydemo.controller;
 
 import com.phunghung29.securitydemo.dto.*;
+import com.phunghung29.securitydemo.entity.Product;
 import com.phunghung29.securitydemo.entity.Role;
 import com.phunghung29.securitydemo.entity.User;
+import com.phunghung29.securitydemo.exception.NotEnoughFieldException;
 import com.phunghung29.securitydemo.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.repository.query.Param;
@@ -11,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.Objects;
 
 import java.util.HashMap;
@@ -28,7 +31,7 @@ public class GatewayController {
         try {
             LoginDto loginDto = userService.login(loginRequest);
             return ResponseEntity.status(HttpStatus.OK).body(
-                    new ResponeObject("200", "User login successfully", loginDto));
+                    new ResponeObject("200", "User login successfully", Instant.now(), loginDto));
         } catch (RuntimeException e) {
             Map<String, String> err = new HashMap<>();
             err.put("message", e.getMessage());
@@ -51,18 +54,30 @@ public class GatewayController {
         return userService.userPasswordChange(changePasswordRequestDto);
     }
 
+    @PostMapping("/admin/addproduct")
+    public ResponseEntity<?> addProduct(@RequestBody AddProductRequestDto addProductRequestDto) {
+        try {
+            Product product = userService.addProduct(addProductRequestDto);
+            return ResponseEntity.status(HttpStatus.OK).body(new ResponeObject("200", "Product added successfully.", Instant.now(), addProductRequestDto.getProductName()));
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", e.getMessage());
+            return ResponseEntity.status(400).contentType(MediaType.APPLICATION_JSON).body(error);
+        }
+    }
+
     @PutMapping("/users/forgotpassword")
-    public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequestDto forgotPasswordRequestDto){
+    public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequestDto forgotPasswordRequestDto) {
         return userService.forgotPassword(forgotPasswordRequestDto);
     }
 
     @PostMapping("/search2")
     public ResponseEntity<?> userSearch2(@RequestBody SearchDto searchDto) {
         List<UserDto> searchDtoList = userService.userSearch2(searchDto);
-        if(searchDto.getRole() == null || searchDto.getRole().isEmpty() &&  searchDto.getEmail() == null || searchDto.getEmail().isEmpty()){
-            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(new ResponeObject("400", "Search can not be done", ""));
+        if (searchDto.getRole() == null || searchDto.getRole().isEmpty() && searchDto.getEmail() == null || searchDto.getEmail().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(new ResponeObject("400", "Search can not be done", Instant.now(), ""));
         } else
-            return ResponseEntity.status(HttpStatus.OK).body(new ResponeObject("200", "Search successfully", searchDtoList));
+            return ResponseEntity.status(HttpStatus.OK).body(new ResponeObject("200", "Search successfully", Instant.now(), searchDtoList));
     }
 
     @PostMapping("/search")

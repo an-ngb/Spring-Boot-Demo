@@ -3,8 +3,12 @@ package com.phunghung29.securitydemo.service.Impl;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.phunghung29.securitydemo.dto.*;
+import com.phunghung29.securitydemo.entity.Product;
 import com.phunghung29.securitydemo.entity.Role;
 import com.phunghung29.securitydemo.entity.User;
+import com.phunghung29.securitydemo.exception.NotEnoughFieldException;
+import com.phunghung29.securitydemo.exception.NotFoundException;
+import com.phunghung29.securitydemo.repository.ProductRepository;
 import com.phunghung29.securitydemo.repository.RoleRepository;
 import com.phunghung29.securitydemo.repository.UserRepository;
 import com.phunghung29.securitydemo.service.UserService;
@@ -41,6 +45,8 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailService;
+
+    private final ProductRepository productRepository;
 
     private final Instant instant = Instant.now();
 
@@ -94,17 +100,17 @@ public class UserServiceImpl implements UserService {
             User foundUser = userRepository.findByEmail(registerRequestDto.getEmail().trim());
             if (foundUser != null) {
                 return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(
-                        new ResponeObject("fail", "User exists.", "")
+                        new ResponeObject("fail", "User exists.", Instant.now(), "")
                 );
             }
             Role role = roleRepository.findById(registerRequestDto.getRole_id()).orElse(null);
             if (role == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                        new ResponeObject("fail", "Role cant not be NULL.", "")
+                        new ResponeObject("fail", "Role cant not be NULL.", Instant.now(), "")
                 );
-            } else if(registerRequestDto.getSecretQuestion() == null || registerRequestDto.getSecretQuestion().isEmpty()){
+            } else if (registerRequestDto.getSecretQuestion() == null || registerRequestDto.getSecretQuestion().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                        new ResponeObject("fail", "Secret question cant not be NULL.", "")
+                        new ResponeObject("fail", "Secret question cant not be NULL.", Instant.now(), "")
                 );
             }
             User user = new User();
@@ -115,15 +121,15 @@ public class UserServiceImpl implements UserService {
 
             if (passwordValidate == null || passwordValidate.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(
-                        new ResponeObject("400", "Password can not be null.", "")
+                        new ResponeObject("400", "Password can not be null.", Instant.now(), "")
                 );
             } else if (passwordValidate.length() < 8) {
                 return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(
-                        new ResponeObject("400", "Password must longer than 7 characters.", "")
+                        new ResponeObject("400", "Password must longer than 7 characters.", Instant.now(), "")
                 );
             } else if (!passwordValidate.matches(".*(?=.*[!@#$%^&*()]).*")) {
                 return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(
-                        new ResponeObject("400", "Password must contain 1 special character.", "")
+                        new ResponeObject("400", "Password must contain 1 special character.", Instant.now(), "")
                 );
             } else {
                 String encodedPassword = passwordEncoder.encode(registerRequestDto.getPassword());
@@ -137,12 +143,12 @@ public class UserServiceImpl implements UserService {
                 userRepository.save(user);
 
                 return ResponseEntity.status(HttpStatus.OK).body(
-                        new ResponeObject("200", "User registration successfully.", user.getEmail())
+                        new ResponeObject("200", "User registration successfully.", Instant.now(), user.getEmail())
                 );
             }
         }
         return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(
-                new ResponeObject("400", "Email is not valid,  please try again.", ""));
+                new ResponeObject("400", "Email is not valid,  please try again.", Instant.now(), ""));
     }
 
     public static String generateToken
@@ -163,13 +169,42 @@ public class UserServiceImpl implements UserService {
                 .sign(algorithm);
     }
 
+    public boolean authenticate(String email, String password) throws Exception {
+        try {
+            Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
+            SecurityContextHolder.getContext().setAuthentication(auth);
+            return true;
+        } catch (DisabledException e) {
+            throw new DisabledException("USER_DISABLED", e);
+        } catch (BadCredentialsException e) {
+            throw new BadCredentialsException("INCORRECT_EMAIL_OR_PASSWORD", e);
+        }
+    }
+
+    public static Properties loadProperties(String fileName) {
+        try (InputStream input = User.class.getClassLoader().getResourceAsStream(fileName)) {
+
+            Properties prop = new Properties();
+
+            if (input == null) {
+                throw new IOException();
+            }
+            prop.load(input);
+            return prop;
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return null;
+        }
+    }
+
     @Override
     public ResponseEntity<?> userPermissionChange(ChangeRoleRequestDto changeRoleRequestDto) {
         Long role = changeRoleRequestDto.getRoleId();
         if (role == null) {
             return ResponseEntity
                     .status(HttpStatus.NOT_ACCEPTABLE)
-                    .body(new ResponeObject("400", "Role can not be null.", role)
+                    .body(new ResponeObject("400", "Role can not be null.", Instant.now(), role)
                     );
         } else {
             User foundUser = userRepository.findByEmail(changeRoleRequestDto.getEmail());
@@ -181,7 +216,7 @@ public class UserServiceImpl implements UserService {
             hmap.put("data", changeRoleRequestDto);
 
             return ResponseEntity.status(HttpStatus.OK).body(
-                    new ResponeObject("200", "Role has been changed", hmap)
+                    new ResponeObject("200", "Role has been changed", Instant.now(), hmap)
             );
         }
     }
@@ -192,9 +227,9 @@ public class UserServiceImpl implements UserService {
         String newPassword = changePasswordRequestDto.getNewPassword();
         User foundUser = userRepository.findByEmail(changePasswordRequestDto.getEmail());
         if (currentRequestEmail.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(new ResponeObject("400", "Email can not be null", ""));
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(new ResponeObject("400", "Email can not be null", Instant.now(), ""));
         } else if (newPassword.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(new ResponeObject("400", "Password can not be null", ""));
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(new ResponeObject("400", "Password can not be null", Instant.now(), ""));
         } else {
             String encodedPassword = passwordEncoder.encode(changePasswordRequestDto.getNewPassword());
             foundUser.setPassword(encodedPassword);
@@ -205,7 +240,7 @@ public class UserServiceImpl implements UserService {
         hmap.put("timestamp", timeStampMillis);
         hmap.put("data", changePasswordRequestDto.getEmail());
 
-        return ResponseEntity.status(HttpStatus.OK).body(new ResponeObject("200", "Password has been changed.", hmap));
+        return ResponseEntity.status(HttpStatus.OK).body(new ResponeObject("200", "Password has been changed.", Instant.now(), hmap));
     }
 
 //    @Override
@@ -276,45 +311,50 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public ResponseEntity<?> forgotPassword(ForgotPasswordRequestDto forgotPasswordRequestDto){
+    public ResponseEntity<?> forgotPassword(ForgotPasswordRequestDto forgotPasswordRequestDto) {
         User foundUser = userRepository.findByEmail(forgotPasswordRequestDto.getEmail());
-        if(forgotPasswordRequestDto.getNewPassword().isEmpty() || (forgotPasswordRequestDto.getEmail() == null || forgotPasswordRequestDto.getEmail().isEmpty()) || (forgotPasswordRequestDto.getSecretQuestion().isEmpty() || forgotPasswordRequestDto.getSecretQuestion() == null)){
-            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body( new ResponeObject("400", "One ref is empty", ""));
-        } else if(foundUser == null){
-            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body( new ResponeObject("400", "User not found", ""));
+        if (forgotPasswordRequestDto.getNewPassword().isEmpty() || (forgotPasswordRequestDto.getEmail() == null || forgotPasswordRequestDto.getEmail().isEmpty()) || (forgotPasswordRequestDto.getSecretQuestion().isEmpty() || forgotPasswordRequestDto.getSecretQuestion() == null)) {
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(new ResponeObject("400", "One ref is empty", Instant.now(), ""));
+        } else if (foundUser == null) {
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(new ResponeObject("400", "User not found", Instant.now(), ""));
         } else if (forgotPasswordRequestDto.getSecretQuestion().equals(foundUser.getSecretQuestion())) {
             foundUser.setPassword(passwordEncoder.encode(forgotPasswordRequestDto.getNewPassword()));
             userRepository.save(foundUser);
         }
-        return ResponseEntity.status(HttpStatus.OK).body( new ResponeObject("200", "Password reset successfully", foundUser.getEmail()));
+        return ResponseEntity.status(HttpStatus.OK).body(new ResponeObject("200", "Password reset successfully", Instant.now(), foundUser.getEmail()));
     }
 
-    public boolean authenticate(String email, String password) throws Exception {
+    @Override
+    public Product addProduct(AddProductRequestDto addProductRequestDto) throws NotEnoughFieldException {
+        Product product = new Product();
         try {
-            Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
-            SecurityContextHolder.getContext().setAuthentication(auth);
-            return true;
-        } catch (DisabledException e) {
-            throw new DisabledException("USER_DISABLED", e);
-        } catch (BadCredentialsException e) {
-            throw new BadCredentialsException("INCORRECT_EMAIL_OR_PASSWORD", e);
+            if ((!addProductRequestDto.getProductName().isEmpty() &&
+                    addProductRequestDto.getProductName() != null) &&
+                    (!addProductRequestDto.getProductPrice().isNaN() &&
+                            addProductRequestDto.getProductPrice() != null &&
+                            addProductRequestDto.getProductPrice() > 0) &&
+                    (addProductRequestDto.getProductQuantity() != null &&
+                            addProductRequestDto.getProductQuantity() >= 0)) {
+
+                product.setProductName(addProductRequestDto.getProductName());
+                product.setPrice(addProductRequestDto.getProductPrice());
+                product.setQuantity(addProductRequestDto.getProductQuantity());
+                return productRepository.save(product);
+            }
+            throw new NotEnoughFieldException();
+        } catch (NotEnoughFieldException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    public static Properties loadProperties(String fileName) {
-        try (InputStream input = User.class.getClassLoader().getResourceAsStream(fileName)) {
-
-            Properties prop = new Properties();
-
-            if (input == null) {
-                throw new IOException();
+    @Override
+    public Product AdjustProduct(AdjustProductRequestDto adjustProductRequestDto) throws Exception {
+        Product product = productRepository.findProductByProductName(adjustProductRequestDto.getProductName());
+        try{
+            if (product != null){
+                if
             }
-            prop.load(input);
-            return prop;
-
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            return null;
         }
+        return null;
     }
 }

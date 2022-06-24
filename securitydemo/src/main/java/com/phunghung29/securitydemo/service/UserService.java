@@ -1,6 +1,7 @@
 package com.phunghung29.securitydemo.service;
 
 import com.phunghung29.securitydemo.dto.*;
+import com.phunghung29.securitydemo.entity.Product;
 import com.phunghung29.securitydemo.entity.Role;
 import com.phunghung29.securitydemo.entity.User;
 import org.springframework.data.repository.query.Param;
@@ -30,4 +31,8 @@ public interface UserService {
     List<UserDto> userSearch2(SearchDto searchDto);
 
     ResponseEntity<?> forgotPassword(ForgotPasswordRequestDto forgotPasswordRequestDto);
+
+    Product addProduct(AddProductRequestDto addProductRequestDto) throws Exception;
+
+    Product AdjustProduct(AdjustProductRequestDto adjustProductRequestDto) throws Exception;
 }
