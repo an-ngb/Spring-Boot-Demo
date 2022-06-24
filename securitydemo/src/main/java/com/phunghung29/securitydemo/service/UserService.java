@@ -28,4 +28,6 @@ public interface UserService {
     List<UserDto> userSearch(SearchDto searchDto);
 
     List<UserDto> userSearch2(SearchDto searchDto);
+
+    ResponseEntity<?> forgotPassword(ForgotPasswordRequestDto forgotPasswordRequestDto);
 }

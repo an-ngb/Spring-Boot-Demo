@@ -13,6 +13,8 @@ import java.util.List;
 public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificationExecutor<User> {
     User findByEmail(String email);
 
+    String findBySecretQuestion(String secretQuestion);
+
     @Query("select u from User u where u.role.roleName like %:role% and u.email like CONCAT('%', :email, '%')")
     List<User> findByUserRoleAndEmail(@Param("role") String role, @Param("email") String email);
 

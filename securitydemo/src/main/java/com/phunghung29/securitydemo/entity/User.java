@@ -22,10 +22,12 @@ public class User {
     private String email;
     @Column(name = "password", nullable = false)
     private String password;
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "role_id", nullable = false)
     @ToString.Exclude
     private Role role;
+    @Column(name = "secret_question", nullable = false)
+    private String secretQuestion;
 
     @Override
     public boolean equals(Object o) {

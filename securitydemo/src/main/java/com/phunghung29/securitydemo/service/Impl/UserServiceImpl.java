@@ -30,6 +30,8 @@ import java.io.InputStream;
 import java.time.Instant;
 import java.util.*;
 
+import static com.phunghung29.securitydemo.util.Utils.loadProperties;
+
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -100,6 +102,10 @@ public class UserServiceImpl implements UserService {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                         new ResponeObject("fail", "Role cant not be NULL.", "")
                 );
+            } else if(registerRequestDto.getSecretQuestion() == null || registerRequestDto.getSecretQuestion().isEmpty()){
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                        new ResponeObject("fail", "Secret question cant not be NULL.", "")
+                );
             }
             User user = new User();
 
@@ -125,6 +131,8 @@ public class UserServiceImpl implements UserService {
                 user.setPassword(encodedPassword);
 
                 user.setRole(role);
+
+                user.setSecretQuestion(registerRequestDto.getSecretQuestion());
 
                 userRepository.save(user);
 
@@ -265,6 +273,20 @@ public class UserServiceImpl implements UserService {
                 }
         );
         return userDtoList;
+    }
+
+    @Override
+    public ResponseEntity<?> forgotPassword(ForgotPasswordRequestDto forgotPasswordRequestDto){
+        User foundUser = userRepository.findByEmail(forgotPasswordRequestDto.getEmail());
+        if(forgotPasswordRequestDto.getNewPassword().isEmpty() || (forgotPasswordRequestDto.getEmail() == null || forgotPasswordRequestDto.getEmail().isEmpty()) || (forgotPasswordRequestDto.getSecretQuestion().isEmpty() || forgotPasswordRequestDto.getSecretQuestion() == null)){
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body( new ResponeObject("400", "One ref is empty", ""));
+        } else if(foundUser == null){
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body( new ResponeObject("400", "User not found", ""));
+        } else if (forgotPasswordRequestDto.getSecretQuestion().equals(foundUser.getSecretQuestion())) {
+            foundUser.setPassword(forgotPasswordRequestDto.getNewPassword());
+            userRepository.save(foundUser);
+        }
+        return ResponseEntity.status(HttpStatus.OK).body( new ResponeObject("200", "Password reset successfully", foundUser.getEmail()));
     }
 
     public boolean authenticate(String email, String password) throws Exception {
